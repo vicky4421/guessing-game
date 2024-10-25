@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+pub mod misc;
+
 use orao_solana_vrf::{
     cpi::accounts::RequestV2,
     program::OraoVrf,
