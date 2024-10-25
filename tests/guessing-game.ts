@@ -32,4 +32,22 @@ describe("guessing-game", () => {
 
     await vrf.waitFulfilled(force_seed);
   });
+
+  it("guesses a random!", async () => {
+    let txHash = await program.methods
+      .guess(new BN(10), [...force_seed])
+      .accounts({
+        payer: provider.wallet.publicKey,
+        treasury,
+        oraoVrf: vrf.programId,
+        random,
+        networkState: networkStateAccountAddress(),
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc({ skipPreflight: true });
+
+    console.log(
+      `tx: https://explorer.solana.com/tx/${txHash}?cluster=devnet\n`
+    );
+  });
 });
