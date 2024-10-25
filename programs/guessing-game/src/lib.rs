@@ -14,11 +14,34 @@ declare_id!("4XsGy8pPM4wRHBXS37q7PbfUJMK3cY7yAez92MxhEvWi");
 
 #[program]
 pub mod guessing_game {
+    use core::random;
+
+    use misc::get_account_data;
+
     use super::*;
 
     pub fn initialize(ctx: Context<GuessingGame>, force_seed: [u8; 32]) -> Result<()> {
 
         orao_solana_vrf::cpi::request_v2(ctx.accounts.request_ctx(), force_seed);
+
+        Ok(())
+    }
+
+    pub fn guess(ctx: Context<GuessingGame>, user_guess: u64, _force_seed: [u8; 32]) -> Result<()> {
+        let account_data = get_account_data(&ctx.accounts.random)?;
+
+        if let Some(randomness) = account_data.fulfilled_randomness() {
+            // use the first 8 bytes from the byte slice
+            let byte_array: [u8; 8] = randomness[0..size_of::<u64>()].try_into().unwrap();
+            let secret_number = u64::from_le_bytes(byte_array);
+            let secret_number = secret_number % 11;
+
+            match user_guess.cmp(&secret_number) {
+                Ordering::Less => msg!("Too small!"),
+                Ordering::Greater => msg!("Too big!"),
+                Ordering::Equal => msg!("You win! {:?}", secret_number),
+            }
+        }
 
         Ok(())
     }
@@ -40,7 +63,7 @@ impl<'info> GuessingGame<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(force_seed: [u8; 32])]
+#[instruction(user_guess: u64, force_seed: [u8; 32])]
 pub struct GuessingGame<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
